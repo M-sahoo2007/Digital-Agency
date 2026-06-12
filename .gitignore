@@ -19,3 +19,17 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+backend/venv/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+database/
