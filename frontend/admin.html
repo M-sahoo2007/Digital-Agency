@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base href="/">
+  <title>Admin — M-sahoo2007</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+  <style>
+    .admin-wrap { min-height: 100vh; padding: 120px 0 80px; }
+    .admin-card { max-width: 480px; margin: 0 auto; background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 48px; }
+    .admin-dashboard { max-width: 960px; margin: 0 auto; }
+    .admin-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px; }
+    .admin-stat { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 24px; text-align: center; }
+    .admin-stat h3 { font-size: 32px; font-weight: 600; margin-bottom: 4px; }
+    .admin-stat p { font-size: 13px; color: var(--text-gray); }
+    .admin-table { width: 100%; background: #fff; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; border-collapse: collapse; }
+    .admin-table th, .admin-table td { padding: 14px 20px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .admin-table th { background: var(--bg); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+    @media (max-width: 768px) { .admin-stats { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="navbar scrolled">
+    <div class="container">
+      <a href="/" class="navbar-logo">M-<span>sahoo2007</span></a>
+      <div class="navbar-cta">
+        <a href="/" class="btn btn-outline">Back to Site</a>
+        <button id="logout-btn" class="btn btn-primary hidden" type="button">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="admin-wrap">
+    <div class="container">
+      <div id="login-section" class="admin-card">
+        <h1 style="font-size: 28px; font-weight: 600; margin-bottom: 8px;">Admin Login</h1>
+        <p style="color: var(--text-gray); margin-bottom: 32px; font-size: 15px;">Sign in to manage M-sahoo2007 content.</p>
+        <form id="login-form" class="contact-form">
+          <div class="form-group">
+            <label for="admin-email">Email</label>
+            <input type="email" id="admin-email" required placeholder="admin@m-sahoo2007.com" value="admin@m-sahoo2007.com">
+          </div>
+          <div class="form-group">
+            <label for="admin-password">Password</label>
+            <input type="password" id="admin-password" required placeholder="Password" value="Admin@12345">
+          </div>
+          <div class="form-message" role="alert"></div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+        </form>
+      </div>
+
+      <div id="dashboard-section" class="admin-dashboard hidden">
+        <div class="admin-header">
+          <h1 style="font-size: 32px; font-weight: 600;">Dashboard</h1>
+          <p id="admin-user" style="color: var(--text-gray); font-size: 14px;"></p>
+        </div>
+        <div class="admin-stats" id="admin-stats"></div>
+        <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 16px;">Recent Contact Submissions</h2>
+        <div style="overflow-x: auto;">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Name</th><th>Email</th><th>Service</th><th>Message</th><th>Date</th></tr>
+            </thead>
+            <tbody id="contacts-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script>
+    const loginSection = document.getElementById('login-section');
+    const dashboardSection = document.getElementById('dashboard-section');
+    const logoutBtn = document.getElementById('logout-btn');
+    const loginForm = document.getElementById('login-form');
+
+    async function loadDashboard() {
+      try {
+        const stats = await window.msahooAPI.request('/admin/stats');
+        const contacts = await window.msahooAPI.request('/admin/contacts');
+        document.getElementById('admin-stats').innerHTML = `
+          <div class="admin-stat"><h3>${stats.contacts}</h3><p>Contacts</p></div>
+          <div class="admin-stat"><h3>${stats.newsletter}</h3><p>Subscribers</p></div>
+          <div class="admin-stat"><h3>${stats.projects}</h3><p>Projects</p></div>
+          <div class="admin-stat"><h3>${stats.blogs}</h3><p>Blog Posts</p></div>
+        `;
+        document.getElementById('contacts-table').innerHTML = contacts.contacts.length
+          ? contacts.contacts.map((c) => `
+            <tr>
+              <td>${c.name}</td>
+              <td>${c.email}</td>
+              <td>${c.service || '—'}</td>
+              <td>${c.message.substring(0, 60)}${c.message.length > 60 ? '…' : ''}</td>
+              <td>${new Date(c.created_at).toLocaleDateString()}</td>
+            </tr>
+          `).join('')
+          : '<tr><td colspan="5" style="text-align:center;color:var(--text-gray);">No submissions yet</td></tr>';
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function showDashboard(user) {
+      loginSection.classList.add('hidden');
+      dashboardSection.classList.remove('hidden');
+      logoutBtn.classList.remove('hidden');
+      document.getElementById('admin-user').textContent = `Logged in as ${user?.email || 'Admin'}`;
+      loadDashboard();
+    }
+
+    function showLogin() {
+      loginSection.classList.remove('hidden');
+      dashboardSection.classList.add('hidden');
+      logoutBtn.classList.add('hidden');
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = loginForm.querySelector('.form-message');
+      msg.className = 'form-message';
+      try {
+        const data = await window.msahooAPI.login(
+          document.getElementById('admin-email').value.trim(),
+          document.getElementById('admin-password').value
+        );
+        if (data.user?.role !== 'admin') {
+          window.msahooAPI.logout();
+          throw new Error('Admin access required');
+        }
+        showDashboard(data.user);
+      } catch (err) {
+        msg.className = 'form-message error';
+        msg.textContent = err.message || 'Login failed';
+      }
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      window.msahooAPI.logout();
+      showLogin();
+    });
+
+    if (window.msahooAPI.token) {
+      showDashboard({ email: 'Admin' });
+    }
+  </script>
+</body>
+</html>
