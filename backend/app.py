@@ -197,22 +197,35 @@ def seed_database():
   print('Database seeded successfully.')
 
 
-app = create_app()
+# app = create_app()
 
-if __name__ == '__main__':
-  with app.app_context():
-    try:
-      db.create_all()
-      seed_database()
-      print(f'Database ready: {app.config["SQLALCHEMY_DATABASE_URI"]}')
-    except Exception as exc:
-      print(f'Database setup failed: {exc}')
-      print('If using PostgreSQL, ensure the server is running and DATABASE_URL is correct.')
-      raise
-  app.run(debug=True, host='0.0.0.0', port=5000)
+# if __name__ == '__main__':
+#   with app.app_context():
+#     try:
+#       db.create_all()
+#       seed_database()
+#       print(f'Database ready: {app.config["SQLALCHEMY_DATABASE_URI"]}')
+#     except Exception as exc:
+#       print(f'Database setup failed: {exc}')
+#       print('If using PostgreSQL, ensure the server is running and DATABASE_URL is correct.')
+#       raise
+#   app.run(debug=True, host='0.0.0.0', port=5000)
+
+# app = create_app()
+
+# with app.app_context():
+#     db.create_all()
+#     seed_database()
 
 app = create_app()
 
 with app.app_context():
-    db.create_all()
-    seed_database()
+    try:
+        db.create_all()
+        seed_database()
+        print("Database initialized")
+    except Exception as exc:
+        print(f"Database error: {exc}")
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
