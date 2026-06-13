@@ -16,12 +16,15 @@ contact_bp = Blueprint('contact', __name__, url_prefix='/api')
 
 
 def write_contact_backup(contact_data):
-  backup_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'database')
-  os.makedirs(backup_dir, exist_ok=True)
-  backup_path = os.path.join(backup_dir, 'contact_backup.jsonl')
+  try:
+    backup_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'database')
+    os.makedirs(backup_dir, exist_ok=True)
+    backup_path = os.path.join(backup_dir, 'contact_backup.jsonl')
 
-  with open(backup_path, 'a', encoding='utf-8') as handle:
-    handle.write(json.dumps(contact_data, ensure_ascii=False) + '\n')
+    with open(backup_path, 'a', encoding='utf-8') as handle:
+      handle.write(json.dumps(contact_data, ensure_ascii=False) + '\n')
+  except Exception:
+    pass
 
 
 @contact_bp.route('/contact', methods=['POST'])
@@ -62,12 +65,11 @@ def submit_contact():
   try:
     db.session.add(contact)
     db.session.commit()
+  except Exception:
     try:
-      send_contact_notification(contact)
+      db.session.rollback()
     except Exception:
       pass
-  except Exception:
-    db.session.rollback()
     write_contact_backup({
       'name': name,
       'email': email,
@@ -75,12 +77,13 @@ def submit_contact():
       'website': website or None,
       'message': message,
       'service': service or None,
-      'created_at': contact.created_at.isoformat() if getattr(contact, 'created_at', None) else None,
+      'created_at': None,
     })
-    return jsonify({
-      'message': 'Contact form submitted successfully',
-      'contact': contact.to_dict(),
-    }), 201
+
+  try:
+    send_contact_notification(contact)
+  except Exception:
+    pass
 
   return jsonify({
     'message': 'Contact form submitted successfully',
