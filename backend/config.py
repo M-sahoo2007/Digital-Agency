@@ -47,7 +47,7 @@ class Config:
 
   CORS_ORIGINS = os.environ.get(
     'CORS_ORIGINS',
-    'http://localhost:5500,http://127.0.0.1:5500,http://localhost:5000,http://127.0.0.1:5000'
+    'http://localhost:5500,http://127.0.0.1:5500,http://localhost:5000,http://127.0.0.1:5000,https://digital-agency-awvs.onrender.com,https://m-sahoo2007.com,https://www.m-sahoo2007.com'
   ).split(',')
 
   RATELIMIT_DEFAULT = os.environ.get('RATELIMIT_DEFAULT', '200 per hour')

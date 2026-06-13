@@ -1,17 +1,17 @@
-// function resolveApiBase() {
-//   if (window.MSAHOO2007_API) return window.MSAHOO2007_API;
-//   if (window.location.port === '5000') {
-//     return `${window.location.origin}/api`;
-//   }
-//   return 'http://127.0.0.1:5000/api';
-// }
-
 function resolveApiBase() {
-  if (window.location.hostname.includes('onrender.com')) {
-    return 'https://digital-agency-awvs.onrender.com/api';
+  if (window.MSAHOO2007_API) {
+    return window.MSAHOO2007_API;
   }
 
-  return 'http://127.0.0.1:5000/api';
+  const localHosts = ['localhost', '127.0.0.1'];
+  const hostname = window.location.hostname;
+  const port = window.location.port;
+
+  if (localHosts.includes(hostname) || port === '5000' || port === '5500') {
+    return 'http://127.0.0.1:5000/api';
+  }
+
+  return `${window.location.origin}/api`;
 }
 
 
