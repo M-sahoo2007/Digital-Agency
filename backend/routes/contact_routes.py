@@ -46,10 +46,16 @@ def submit_contact():
     message=message,
     service=service or None,
   )
-  db.session.add(contact)
-  db.session.commit()
 
-  send_contact_notification(contact)
+  try:
+    db.session.add(contact)
+    db.session.commit()
+    send_contact_notification(contact)
+  except Exception:
+    db.session.rollback()
+    return jsonify({
+      'error': 'We could not submit your message right now. Please try again in a moment.',
+    }), 500
 
   return jsonify({
     'message': 'Contact form submitted successfully',

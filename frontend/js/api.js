@@ -41,15 +41,32 @@ class MSahoo2007API {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      ...options,
-      headers,
-    });
+    let response;
+    try {
+      response = await fetch(`${this.baseUrl}${endpoint}`, {
+        ...options,
+        headers,
+      });
+    } catch (error) {
+      throw new Error('Network error. Please check your connection and try again.');
+    }
 
-    const data = await response.json().catch(() => ({}));
+    let data = {};
+    const text = await response.text();
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = {};
+      }
+    }
 
     if (!response.ok) {
-      throw new Error(data.error || data.message || 'Request failed');
+      const fallbackMessage = response.status >= 500
+        ? 'The server is temporarily unavailable. Please try again in a moment.'
+        : 'Your request could not be completed. Please try again.';
+
+      throw new Error(data.error || data.message || fallbackMessage);
     }
 
     return data;
