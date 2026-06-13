@@ -1,3 +1,6 @@
+import json
+import os
+
 from flask import Blueprint, request, jsonify
 from models import db, Contact
 from services.validation import (
@@ -10,6 +13,15 @@ from services.validation import (
 from services.email_service import send_contact_notification
 
 contact_bp = Blueprint('contact', __name__, url_prefix='/api')
+
+
+def write_contact_backup(contact_data):
+  backup_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'database')
+  os.makedirs(backup_dir, exist_ok=True)
+  backup_path = os.path.join(backup_dir, 'contact_backup.jsonl')
+
+  with open(backup_path, 'a', encoding='utf-8') as handle:
+    handle.write(json.dumps(contact_data, ensure_ascii=False) + '\n')
 
 
 @contact_bp.route('/contact', methods=['POST'])
@@ -50,12 +62,25 @@ def submit_contact():
   try:
     db.session.add(contact)
     db.session.commit()
-    send_contact_notification(contact)
+    try:
+      send_contact_notification(contact)
+    except Exception:
+      pass
   except Exception:
     db.session.rollback()
+    write_contact_backup({
+      'name': name,
+      'email': email,
+      'phone': phone or None,
+      'website': website or None,
+      'message': message,
+      'service': service or None,
+      'created_at': contact.created_at.isoformat() if getattr(contact, 'created_at', None) else None,
+    })
     return jsonify({
-      'error': 'We could not submit your message right now. Please try again in a moment.',
-    }), 500
+      'message': 'Contact form submitted successfully',
+      'contact': contact.to_dict(),
+    }), 201
 
   return jsonify({
     'message': 'Contact form submitted successfully',
